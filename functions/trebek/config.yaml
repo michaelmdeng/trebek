@@ -1,0 +1,8 @@
+scheduleConfig:
+  - name: Michael Deng
+    calendarId: c9ms0v3h5b5uiap6j0ddr6vfck@group.calendar.google.com
+    phoneNumber: +19542920989
+  - name: Mindy Duong
+    calendarId: c9ms0v3h5b5uiap6j0ddr6vfck@group.calendar.google.com
+    phoneNumber: +18582055744
+defaultPhoneNumber: +18582055744
