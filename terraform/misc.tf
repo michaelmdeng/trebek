@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    twilio = {
+      source  = "RJPearson94/twilio"
+      version = ">= 0.2.1"
+    }
+  }
+}
+
 provider "google" {
   project = "trebek"
   region  = "us-west2"
@@ -38,4 +47,7 @@ resource "google_project_service" "build_service" {
   }
 
   disable_dependent_services = true
+}
+
+provider "twilio" {
 }
