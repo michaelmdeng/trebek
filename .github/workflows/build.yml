@@ -35,4 +35,4 @@ jobs:
 
     - name: Lint with pylint
       run: |
-        pylint -E functions/trebek/**/*.py
+        pylint -E functions/trebek
