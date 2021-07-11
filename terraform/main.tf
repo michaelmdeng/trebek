@@ -43,3 +43,103 @@ resource "google_cloudfunctions_function" "trebek" {
     "deployment-tool" = "cli-gcloud"
   }
 }
+
+resource "twilio_phone_number" "trebek_number" {
+  account_sid         = "AC5bb6f2b2ef55fc87c7bea9e7c16c84ee"
+  phone_number        = "+12512902470"
+  status_callback_url = twilio_studio_flow.trebek_flow.webhook_url
+}
+
+resource "twilio_studio_flow" "trebek_flow" {
+  friendly_name  = "Trebek"
+  status         = "published"
+  commit_message = "Published Flow"
+  validate       = true
+
+  definition = jsonencode({
+    "description": "Trebek",
+    "states": [
+      {
+	"name": "Trigger",
+	"type": "trigger",
+	"transitions": [
+	  {
+	    "event": "incomingMessage"
+	  },
+	  {
+	    "next": "QueryForwardingNumber",
+	    "event": "incomingCall"
+	  },
+	  {
+	    "event": "incomingRequest"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": 340,
+	    "y": 100
+	  }
+	}
+      },
+      {
+	"name": "ForwardCall",
+	"type": "connect-call-to",
+	"transitions": [
+	  {
+	    "event": "callCompleted"
+	  },
+	  {
+	    "event": "hangup"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": 460,
+	    "y": 810
+	  },
+	  "caller_id": "{{contact.channel.address}}",
+	  "noun": "number",
+	  "to": "{{widgets.QueryForwardingNumber.parsed.forwardTo}}",
+	  "timeout": 30
+	}
+      },
+      {
+	"name": "QueryForwardingNumber",
+	"type": "make-http-request",
+	"transitions": [
+	  {
+	    "next": "ForwardCall",
+	    "event": "success"
+	  },
+	  {
+	    "event": "failed"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": 480,
+	    "y": 430
+	  },
+	  "method": "POST",
+	  "content_type": "application/x-www-form-urlencoded;charset=utf-8",
+	  "body": "{\n  \"to\": {{trigger.call.To}} ,\n  \"from\": {{trigger.call.From}} \n}",
+	  "parameters": [
+	    {
+	      "value": "{{trigger.call.From}}",
+	      "key": "callFrom"
+	    },
+	    {
+	      "value": "{{trigger.call.To}}",
+	      "key": "callTo"
+	    }
+	  ],
+	  "url": google_cloudfunctions_function.trebek.https_trigger_url
+	}
+      }
+    ],
+    "initial_state": "Trigger",
+    "flags": {
+      "allow_concurrent_calls": true
+    }
+  })
+}
