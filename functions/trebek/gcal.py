@@ -11,14 +11,13 @@ class GCalClient:
 
         self._service = build("calendar", "v3", credentials=creds)
 
-    def get_events(self, cal_id="primary"):
-        now = datetime.utcnow()
+    def get_events(self, cal_id="primary", event_time=datetime.utcnow()):
         events_result = (
             self._service.events()
             .list(
                 calendarId=cal_id,
-                timeMin=(now - timedelta(minutes=1)).isoformat() + "Z",
-                timeMax=(now + timedelta(minutes=1)).isoformat() + "Z",
+                timeMin=(event_time - timedelta(minutes=1)).isoformat() + "Z",
+                timeMax=(event_time + timedelta(minutes=1)).isoformat() + "Z",
                 maxResults=2,
                 singleEvents=True,
                 orderBy="startTime",
