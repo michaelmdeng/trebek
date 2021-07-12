@@ -46,8 +46,12 @@ resource "google_cloudfunctions_function" "trebek" {
 
 resource "twilio_phone_number" "trebek_number" {
   account_sid         = "AC5bb6f2b2ef55fc87c7bea9e7c16c84ee"
-  phone_number        = "+12512902470"
+  phone_number        = "+14153246262"
   status_callback_url = twilio_studio_flow.trebek_flow.webhook_url
+
+  messaging {
+    url = twilio_studio_flow.trebek_flow.webhook_url
+  }
 }
 
 resource "twilio_studio_flow" "trebek_flow" {
@@ -64,6 +68,7 @@ resource "twilio_studio_flow" "trebek_flow" {
 	"type": "trigger",
 	"transitions": [
 	  {
+	    "next": "SendCallMessage",
 	    "event": "incomingMessage"
 	  },
 	  {
@@ -94,8 +99,8 @@ resource "twilio_studio_flow" "trebek_flow" {
 	],
 	"properties": {
 	  "offset": {
-	    "x": 460,
-	    "y": 810
+	    "x": 90,
+	    "y": 1040
 	  },
 	  "caller_id": "{{contact.channel.address}}",
 	  "noun": "number",
@@ -108,10 +113,11 @@ resource "twilio_studio_flow" "trebek_flow" {
 	"type": "make-http-request",
 	"transitions": [
 	  {
-	    "next": "ForwardCall",
+	    "next": "SayCurrentChief",
 	    "event": "success"
 	  },
 	  {
+	    "next": "SayFailed",
 	    "event": "failed"
 	  }
 	],
@@ -134,6 +140,89 @@ resource "twilio_studio_flow" "trebek_flow" {
 	    }
 	  ],
 	  "url": google_cloudfunctions_function.trebek.https_trigger_url
+	}
+      },
+      {
+	"name": "SayCurrentChief",
+	"type": "say-play",
+	"transitions": [
+	  {
+	    "next": "ForwardCall",
+	    "event": "audioComplete"
+	  }
+	],
+	"properties": {
+	  "voice": "default",
+	  "offset": {
+	    "x": 60,
+	    "y": 730
+	  },
+	  "loop": 1,
+	  "say": "The current Jeopardy Chief is {{widgets.QueryForwardingNumber.parsed.name}}.\n\nForwarding your call now.",
+	  "language": "en-US"
+	}
+      },
+      {
+	"name": "SayFailed",
+	"type": "say-play",
+	"transitions": [
+	  {
+	    "next": "ForwardCallBackup",
+	    "event": "audioComplete"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": 670,
+	    "y": 720
+	  },
+	  "loop": 1,
+	  "say": "I could not determine the current Jeopardy Chief. Forwarding your call to Mindy Duong."
+	}
+      },
+      {
+	"name": "ForwardCallBackup",
+	"type": "connect-call-to",
+	"transitions": [
+	  {
+	    "event": "callCompleted"
+	  },
+	  {
+	    "event": "hangup"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": 670,
+	    "y": 1030
+	  },
+	  "caller_id": "{{contact.channel.address}}",
+	  "noun": "number",
+	  "to": "+18582055744",
+	  "timeout": 30
+	}
+      },
+      {
+	"name": "SendCallMessage",
+	"type": "send-message",
+	"transitions": [
+	  {
+	    "event": "sent"
+	  },
+	  {
+	    "event": "failed"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": -150,
+	    "y": 410
+	  },
+	  "service": "{{trigger.message.InstanceSid}}",
+	  "channel": "{{trigger.message.ChannelSid}}",
+	  "from": "{{flow.channel.address}}",
+	  "to": "{{contact.channel.address}}",
+	  "body": "If you'd like to contact the current Jeopardy Chief, please call this number."
 	}
       }
     ],
