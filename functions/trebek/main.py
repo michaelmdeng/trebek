@@ -59,7 +59,10 @@ def get_forward_info(call_from, call_to, call_time):
                 person["phoneNumber"],
             )
 
-            return ForwardingInfo(person["name"], person["phoneNumber"], False)
+            on_shift = any(event for event in events if jeopardy.is_em_shift(event))
+            logging.info("Detected work shift for %s", person["name"])
+
+            return ForwardingInfo(person["name"], person["phoneNumber"], on_shift)
 
     default_number = conf["defaultPhoneNumber"]
     default_name = conf["defaultName"]

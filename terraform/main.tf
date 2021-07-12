@@ -99,8 +99,8 @@ resource "twilio_studio_flow" "trebek_flow" {
 	],
 	"properties": {
 	  "offset": {
-	    "x": 90,
-	    "y": 1040
+	    "x": 140,
+	    "y": 1630
 	  },
 	  "caller_id": "{{contact.channel.address}}",
 	  "noun": "number",
@@ -147,7 +147,7 @@ resource "twilio_studio_flow" "trebek_flow" {
 	"type": "say-play",
 	"transitions": [
 	  {
-	    "next": "ForwardCall",
+	    "next": "SplitOnShift",
 	    "event": "audioComplete"
 	  }
 	],
@@ -223,6 +223,55 @@ resource "twilio_studio_flow" "trebek_flow" {
 	  "from": "{{flow.channel.address}}",
 	  "to": "{{contact.channel.address}}",
 	  "body": "If you'd like to contact the current Jeopardy Chief, please call this number."
+	}
+      },
+      {
+	"name": "SayChiefShift",
+	"type": "say-play",
+	"transitions": [
+	  {
+	    "next": "ForwardCall",
+	    "event": "audioComplete"
+	  }
+	],
+	"properties": {
+	  "offset": {
+	    "x": 250,
+	    "y": 1270
+	  },
+	  "loop": 1,
+	  "say": "{{widgets.QueryForwardingNumber.parsed.name}} may be on shift, so you may need to call multiple times to reach them."
+	}
+      },
+      {
+	"name": "SplitOnShift",
+	"type": "split-based-on",
+	"transitions": [
+	  {
+	    "next": "ForwardCall",
+	    "event": "noMatch"
+	  },
+	  {
+	    "next": "SayChiefShift",
+	    "event": "match",
+	    "conditions": [
+	      {
+		"friendly_name": "If value equal_to true",
+		"arguments": [
+		  "{{widgets.QueryForwardingNumber.parsed.onShift}}"
+		],
+		"type": "equal_to",
+		"value": "true"
+	      }
+	    ]
+	  }
+	],
+	"properties": {
+	  "input": "{{widgets.QueryForwardingNumber.parsed.onShift}}",
+	  "offset": {
+	    "x": 90,
+	    "y": 1020
+	  }
 	}
       }
     ],
