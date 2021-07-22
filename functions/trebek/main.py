@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 import logging
 
@@ -8,6 +9,7 @@ import gcal
 import config
 import jeopardy
 from model import ForwardingInfo, ForwardingStatusContext
+import util
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +25,7 @@ def trebek(request):
             call_to = form_data["callTo"]
             call_time = datetime.utcnow()
 
-            forward_info = get_forward_info(call_from, call_to, call_time)
+            forward_info = asyncio.run(get_forward_info(call_from, call_to, call_time))
             return flask.make_response(flask.jsonify(forward_info._asdict()), 200)
     except werkzeug.exceptions.BadRequestKeyError as e:
         logging.exception(e)
@@ -33,7 +35,7 @@ def trebek(request):
         return flask.make_response(flask.jsonify({"error": e.__str__()}), 500)
 
 
-def get_forward_info(call_from, call_to, call_time):
+async def get_forward_info(call_from, call_to, call_time):
     """
     Retrieves the Jeopardy oncall number to forward to.
 
@@ -43,32 +45,16 @@ def get_forward_info(call_from, call_to, call_time):
 
     logging.info("Received call from %s to %s at %s", call_from, call_to, call_time)
 
-    client = gcal.GCalClient()
     conf = config.TrebekConfig().config
 
-    for person in conf["scheduleConfig"]:
-        calendar_id = person["calendarId"]
-        logging.info(
-            "Checking calendar events for %s from %s", person["name"], calendar_id
+    async with gcal.GCalClient() as client:
+        tasks = [
+            jeopardy.jeopardy_info(client, person, call_time)
+            for person in conf["scheduleConfig"]
+        ]
+        jeopardy_config = await util.wait_until(
+            tasks, lambda task: task.result() is not None
         )
-        events = client.get_events(calendar_id, call_time)
-        if any(event for event in events if jeopardy.is_jeop_chief_shift(event)):
-            logging.info(
-                "Detected Jeopardy Chief event for %s, forwarding call to %s",
-                person["name"],
-                person["phoneNumber"],
-            )
-
-            on_shift = any(event for event in events if jeopardy.is_em_shift(event))
-            logging.info("Detected work shift for %s", person["name"])
-
-            return ForwardingInfo(person["name"], person["phoneNumber"], on_shift)
-
-    default_number = conf["defaultPhoneNumber"]
-    default_name = conf["defaultName"]
-    logging.warning(
-        "Did not detect any Jeopardy Chief shifts for any members, forwarding call to default: %s",
-        default_number,
-    )
-
-    return ForwardingInfo(default_name, default_number, False)
+        return ForwardingInfo(
+            jeopardy_config.name, jeopardy_config.phoneNumber, jeopardy_config.onShift
+        )
