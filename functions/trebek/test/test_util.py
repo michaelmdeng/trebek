@@ -20,7 +20,7 @@ def async_exc(exc):
 class TestWaitUntil:
     @pytest.mark.asyncio
     async def test_returns_none_if_no_tasks(self):
-        assert (await util.wait_until([], lambda t: True) is None)
+        assert await util.wait_until([], lambda t: True) is None
 
     @pytest.mark.asyncio
     async def test_returns_first_successful_task(self):
