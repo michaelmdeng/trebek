@@ -4,4 +4,6 @@ flask
 google-api-python-client
 google-cloud-datastore
 pylint
+pytest
+pytest-asyncio
 pyyaml
