@@ -1,5 +1,6 @@
 import asyncio
 from unittest.mock import MagicMock
+
 import pytest
 
 import jeopardy
@@ -40,7 +41,6 @@ class TestJeopardyInfo:
 
     @pytest.mark.asyncio
     async def test_detects_if_on_shift(self, gcal_client, schedule_config):
-        pass
         jeopardy.is_jeop_chief_shift = MagicMock(return_value=False)
         jeopardy.is_em_shift = MagicMock(return_value=True)
 
