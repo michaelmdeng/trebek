@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import asdict
 from datetime import datetime
 import logging
 
@@ -8,7 +9,7 @@ import werkzeug.exceptions
 import gcal
 import config
 import jeopardy
-from model import ForwardingInfo, ForwardingStatusContext
+import model
 import util
 
 
@@ -20,13 +21,11 @@ def trebek(request):
     logging.info("Received request with data: %s", form_data)
 
     try:
-        with ForwardingStatusContext(form_data):
-            call_from = form_data["callFrom"]
-            call_to = form_data["callTo"]
-            call_time = datetime.utcnow()
+        with model.ForwardingStatusContext(request):
+            forward_request = parse_request(request)
 
-            forward_info = asyncio.run(get_forward_info(call_from, call_to, call_time))
-            return flask.make_response(flask.jsonify(forward_info._asdict()), 200)
+            forward_info = asyncio.run(get_forward_response(forward_request))
+            return flask.make_response(flask.jsonify(asdict(forward_info)), 200)
     except werkzeug.exceptions.BadRequestKeyError as e:
         logging.exception(e)
         return flask.make_response(flask.jsonify({"error": e.__str__()}), 400)
@@ -35,7 +34,20 @@ def trebek(request):
         return flask.make_response(flask.jsonify({"error": e.__str__()}), 500)
 
 
-async def get_forward_info(call_from, call_to, call_time):
+def parse_request(request):
+    form_data = request.form
+
+    request = model.ForwardingRequest(
+        numberFrom=form_data["callFrom"],
+        numberTo=form_data["callTo"],
+        requestTime=datetime.utcnow(),
+    )
+    logging.info("Received forwarding request: %s", request)
+
+    return request
+
+
+async def get_forward_response(forward_request):
     """
     Retrieves the Jeopardy oncall number to forward to.
 
@@ -43,18 +55,26 @@ async def get_forward_info(call_from, call_to, call_time):
     currently on shift.
     """
 
-    logging.info("Received call from %s to %s at %s", call_from, call_to, call_time)
-
     conf = config.TrebekConfig().config
 
     async with gcal.GCalClient() as client:
         tasks = [
-            jeopardy.jeopardy_info(client, person, call_time)
-            for person in conf["scheduleConfig"]
+            jeopardy.jeopardy_info(
+                client,
+                model.ScheduleConfig(**schedule_config),
+                forward_request.requestTime,
+            )
+            for schedule_config in conf["scheduleConfig"]
         ]
         jeopardy_config = await util.wait_until(
             tasks, lambda task: task.result() is not None
         )
-        return ForwardingInfo(
-            jeopardy_config.name, jeopardy_config.phoneNumber, jeopardy_config.onShift
-        )
+        return generate_response(jeopardy_config)
+
+
+def generate_response(jeopardy_config):
+    return model.ForwardingResponse(
+        name=jeopardy_config.name,
+        forwardTo=jeopardy_config.phoneNumber,
+        onShift=jeopardy_config.onShift,
+    )
