@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import asdict
 from datetime import datetime
 import logging
 
@@ -25,7 +26,7 @@ def trebek(request):
             forward_request = parse_request(request)
 
             forward_info = asyncio.run(get_forward_response(forward_request))
-            return flask.make_response(flask.jsonify(forward_info.asdict()), 200)
+            return flask.make_response(flask.jsonify(asdict(forward_info)), 200)
     except werkzeug.exceptions.BadRequestKeyError as e:
         logging.exception(e)
         return flask.make_response(flask.jsonify({"error": e.__str__()}), 400)
