@@ -74,7 +74,7 @@ class ForwardingStatus:
     @staticmethod
     def from_request(request):
         return ForwardingStatus(
-            id=None, requestData=request, startTime=None, endTime=None, status=None
+            id=None, requestData=request.form, startTime=None, endTime=None, status=None
         )
 
     def save(self):
