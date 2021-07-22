@@ -9,7 +9,6 @@ import werkzeug.exceptions
 import gcal
 import config
 import jeopardy
-from model import ForwardingStatusContext
 import model
 import util
 
@@ -22,7 +21,7 @@ def trebek(request):
     logging.info("Received request with data: %s", form_data)
 
     try:
-        with ForwardingStatusContext(request):
+        with model.ForwardingStatusContext(request):
             forward_request = parse_request(request)
 
             forward_info = asyncio.run(get_forward_response(forward_request))
