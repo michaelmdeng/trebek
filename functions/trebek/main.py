@@ -7,7 +7,7 @@ import werkzeug.exceptions
 import gcal
 import config
 import jeopardy
-from model import ForwardingInfo
+from model import ForwardingInfo, ForwardingStatusContext
 
 
 logging.basicConfig(level=logging.INFO)
@@ -18,19 +18,19 @@ def trebek(request):
     logging.info("Received request with data: %s", form_data)
 
     try:
-        call_from = form_data["callFrom"]
-        call_to = form_data["callTo"]
-        call_time = datetime.utcnow()
-    except werkzeug.exceptions.BadRequestKeyError as e:
-        return flask.make_response(flask.jsonify({"error": e.__str__()}), 400)
+        with ForwardingStatusContext(form_data):
+            call_from = form_data["callFrom"]
+            call_to = form_data["callTo"]
+            call_time = datetime.utcnow()
 
-    try:
-        forward_info = get_forward_info(call_from, call_to, call_time)
+            forward_info = get_forward_info(call_from, call_to, call_time)
+            return flask.make_response(flask.jsonify(forward_info._asdict()), 200)
+    except werkzeug.exceptions.BadRequestKeyError as e:
+        logging.exception(e)
+        return flask.make_response(flask.jsonify({"error": e.__str__()}), 400)
     except Exception as e:
         logging.exception(e)
         return flask.make_response(flask.jsonify({"error": e.__str__()}), 500)
-
-    return flask.make_response(flask.jsonify(forward_info._asdict()), 200)
 
 
 def get_forward_info(call_from, call_to, call_time):
