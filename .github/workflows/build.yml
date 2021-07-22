@@ -32,3 +32,7 @@ jobs:
     - name: Format with black
       run: |
         black --check functions/trebek
+
+    - name: Lint with pylint
+      run: |
+        cd functions/trebek && pylint -E **.py && pylint --fail-under=8.0 **.py
