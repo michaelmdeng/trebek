@@ -4,7 +4,8 @@ import logging
 
 async def wait_until(aws, predicate, timeout=None):
     """
-    Run awaitable objects in aws concurrently and block until the first one that satisifies the predicate.
+    Run awaitable objects in aws concurrently and block until the first one
+    that satisifies the predicate.
 
     aws - Non-empty iterable of awaitable objects
     predicate - Function or lambda that takes a Task as input and returns a boolean
