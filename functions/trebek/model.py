@@ -7,6 +7,10 @@ from google.cloud import datastore
 DATASTORE_CLIENT = None
 
 
+class NoJeopardyChiefException(Exception):
+    pass
+
+
 @dataclass
 class ForwardingRequest:
     """

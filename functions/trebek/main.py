@@ -47,6 +47,17 @@ def parse_request(request):
     return request
 
 
+def get_jeopardy_info_tasks(client, forward_request, schedule_configs):
+    return [
+        jeopardy.jeopardy_info(
+            client,
+            schedule_config,
+            forward_request.requestTime,
+        )
+        for schedule_config in schedule_configs
+    ]
+
+
 async def get_forward_response(forward_request):
     """
     Retrieves the Jeopardy oncall number to forward to.
@@ -58,18 +69,22 @@ async def get_forward_response(forward_request):
     conf = config.TrebekConfig().config
 
     async with gcal.GCalClient() as client:
-        tasks = [
-            jeopardy.jeopardy_info(
-                client,
-                model.ScheduleConfig(**schedule_config),
-                forward_request.requestTime,
-            )
-            for schedule_config in conf["scheduleConfig"]
-        ]
-        jeopardy_config = await util.wait_until(
-            tasks, lambda task: task.result() is not None
+        tasks = get_jeopardy_info_tasks(
+            client,
+            forward_request,
+            [
+                model.ScheduleConfig(**schedule_config)
+                for schedule_config in conf["scheduleConfig"]
+            ],
         )
-        return generate_response(jeopardy_config)
+        jeopardy_config = await util.wait_until(
+            tasks, lambda task: task.exception() is None and task.result() is not None
+        )
+
+        if jeopardy_config is None:
+            raise model.NoJeopardyChiefException("No Jeopardy Chief found.")
+        else:
+            return generate_response(jeopardy_config)
 
 
 def generate_response(jeopardy_config):

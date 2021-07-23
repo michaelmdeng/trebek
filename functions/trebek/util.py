@@ -12,21 +12,23 @@ async def wait_until(aws, predicate, timeout=None):
     timeout - maximum number of seconds to wait
     """
 
-    done, pending = await asyncio.wait(
+    if not aws:
+        return None
+
+    dones, pendings = await asyncio.wait(
         aws, return_when=asyncio.FIRST_COMPLETED, timeout=timeout
     )
 
-    for completed_task in done:
-        task_name = completed_task.get_name()
-        logging.debug("Completed task %s", task_name)
-        if not predicate(completed_task):
-            logging.debug("Task %s did not satisfy predicate", task_name)
+    for done in dones:
+        logging.debug("Completed awaitable %s", done)
+        if not predicate(done):
+            logging.debug("Awaitable %s did not satisfy predicate", done)
             continue
         else:
-            logging.debug("Task %s satisfied predicate", task_name)
-            for pending_task in pending:
-                logging.debug("Killing pending task %s", pending_task.get_name())
-                pending_task.cancel()
-            return completed_task.result()
+            logging.debug("Awaitable %s satisfied predicate", done)
+            for pending in pendings:
+                logging.debug("Killing pending awaitables %s", pending)
+                pending.cancel()
+            return done.result()
 
-    return await wait_until(pending, predicate, timeout=None)
+    return await wait_until(pendings, predicate, timeout=None)
