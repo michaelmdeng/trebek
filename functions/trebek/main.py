@@ -93,6 +93,3 @@ def generate_response(jeopardy_config):
         forwardTo=jeopardy_config.phoneNumber,
         onShift=jeopardy_config.onShift,
     )
-
-
-asyncio.run(get_forward_response(model.ForwardingRequest(numberFrom="", numberTo="")))
