@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 from dataclasses import asdict
 from datetime import datetime
 import logging
@@ -6,8 +7,8 @@ import logging
 import flask
 import werkzeug.exceptions
 
-import gcal
-import config
+from gcal import GCalClient
+from config import ConfigClient
 import jeopardy
 import model
 import util
@@ -66,9 +67,11 @@ async def get_forward_response(forward_request):
     currently on shift.
     """
 
-    conf = config.TrebekConfig().config
-
-    async with gcal.GCalClient() as client:
+    async with contextlib.AsyncExitStack() as stack:
+        client, conf = await asyncio.gather(
+            stack.enter_async_context(GCalClient()),
+            stack.enter_async_context(ConfigClient()),
+        )
         tasks = get_jeopardy_info_tasks(
             client,
             forward_request,
