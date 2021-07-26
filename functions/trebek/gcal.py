@@ -5,6 +5,8 @@ import logging
 from aiogoogle import Aiogoogle
 from aiogoogle.auth.creds import ServiceAccountCreds
 
+from secret import SecretsClient
+
 
 class GCalClient:
     def __init__(self):
@@ -12,11 +14,12 @@ class GCalClient:
         self._google = None
 
     async def __aenter__(self):
-        self._creds_file = open("credentials.json")
-        service_account_key = json.load(self._creds_file)
+        service_account_creds = json.loads(
+            await SecretsClient().get("TREBEK_SERVICE_ACCOUNT_CREDENTIALS")
+        )
         creds = ServiceAccountCreds(
             scopes=["https://www.googleapis.com/auth/calendar.events.readonly"],
-            **service_account_key
+            **service_account_creds
         )
 
         self._google = Aiogoogle(service_account_creds=creds)
@@ -28,7 +31,7 @@ class GCalClient:
         if self._creds_file:
             self._creds_file.close()
         if self._google:
-            await self._google.__aexit__(exc_type, exc, backtrace)
+            return await self._google.__aexit__(exc_type, exc, backtrace)
 
     async def get_events_async(self, cal_id="primary", event_time=datetime.utcnow()):
         cal = await self._google.discover("calendar", "v3")

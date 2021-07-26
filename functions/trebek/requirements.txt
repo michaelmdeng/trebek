@@ -3,6 +3,7 @@ black
 flask
 google-api-python-client
 google-cloud-datastore
+google-cloud-secret-manager
 pylint
 pytest
 pytest-asyncio

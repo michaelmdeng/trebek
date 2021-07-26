@@ -4,7 +4,6 @@ import pytest
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.exceptions import BadRequestKeyError
 
-import gcal
 import main
 import model
 from test import test_util
@@ -42,8 +41,8 @@ class TestParseRequest:
 class TestGetForwardResponse:
     @pytest.fixture
     def gcal_client(self):
-        gcal.GCalClient = MagicMock()
-        return gcal.GCalClient
+        main.GCalClient = MagicMock()
+        return main.GCalClient
 
     @pytest.mark.asyncio
     async def test_return_success(self, gcal_client):
@@ -63,7 +62,8 @@ class TestGetForwardResponse:
             model.ForwardingRequest(numberFrom="", numberTo="")
         )
 
-    async def test_return_first_successful_jeopardy_config(self, gcal_client):
+    @pytest.mark.asyncio
+    async def test_return_any_successful_jeopardy_config(self, gcal_client):
         main.get_jeopardy_info_tasks = MagicMock(
             return_value=[
                 test_util.async_result(
@@ -82,7 +82,7 @@ class TestGetForwardResponse:
         res = await main.get_forward_response(
             model.ForwardingRequest(numberFrom="", numberTo="")
         )
-        assert res.name == "foo"
+        assert res.name == "foo" or res.name == "bar"
 
     @pytest.mark.asyncio
     async def test_raise_exception_if_no_jeopardy_config(self, gcal_client):
