@@ -58,6 +58,16 @@ resource "google_project_service" "secret_manager_service" {
   }
 }
 
+resource "google_project_service" "datastore_service" {
+  project = "trebek"
+  service = "datastore.googleapis.com"
+
+  timeouts {
+    create = "15m"
+    update = "15m"
+  }
+}
+
 provider "twilio" {
   account_sid = data.google_secret_manager_secret_version.twilio_account_sid_value.secret_data
   api_key = data.google_secret_manager_secret_version.twilio_api_key_value.secret_data
