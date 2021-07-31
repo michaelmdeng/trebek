@@ -5,6 +5,11 @@ terraform {
       version = ">= 0.2.1"
     }
   }
+
+  backend "gcs" {
+    bucket = "trebek-terraform"
+    prefix = "terraform/state"
+  }
 }
 
 provider "google" {
