@@ -26,8 +26,6 @@ resource "google_project_service" "iam_service" {
     create = "15m"
     update = "15m"
   }
-
-  disable_dependent_services = true
 }
 
 resource "google_project_service" "functions_service" {
@@ -38,8 +36,6 @@ resource "google_project_service" "functions_service" {
     create = "15m"
     update = "15m"
   }
-
-  disable_dependent_services = true
 }
 
 resource "google_project_service" "build_service" {
@@ -50,9 +46,20 @@ resource "google_project_service" "build_service" {
     create = "15m"
     update = "15m"
   }
+}
 
-  disable_dependent_services = true
+resource "google_project_service" "secret_manager_service" {
+  project = "trebek"
+  service = "secretmanager.googleapis.com"
+
+  timeouts {
+    create = "15m"
+    update = "15m"
+  }
 }
 
 provider "twilio" {
+  account_sid = data.google_secret_manager_secret_version.twilio_account_sid_value.secret_data
+  api_key = data.google_secret_manager_secret_version.twilio_api_key_value.secret_data
+  api_secret = data.google_secret_manager_secret_version.twilio_api_secret_value.secret_data
 }
