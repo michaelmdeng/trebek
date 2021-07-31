@@ -60,224 +60,244 @@ resource "twilio_studio_flow" "trebek_flow" {
   commit_message = "Published Flow"
   validate       = true
 
-  definition = jsonencode({
-    "description": "Trebek",
-    "states": [
-      {
-	"name": "Trigger",
-	"type": "trigger",
-	"transitions": [
-	  {
-	    "next": "SendCallMessage",
-	    "event": "incomingMessage"
-	  },
-	  {
-	    "next": "QueryForwardingNumber",
-	    "event": "incomingCall"
-	  },
-	  {
-	    "event": "incomingRequest"
-	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": 340,
-	    "y": 100
-	  }
-	}
-      },
-      {
-	"name": "ForwardCall",
-	"type": "connect-call-to",
-	"transitions": [
-	  {
-	    "event": "callCompleted"
-	  },
-	  {
-	    "event": "hangup"
-	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": 140,
-	    "y": 1630
-	  },
-	  "caller_id": "{{contact.channel.address}}",
-	  "noun": "number",
-	  "to": "{{widgets.QueryForwardingNumber.parsed.forwardTo}}",
-	  "timeout": 30
-	}
-      },
-      {
-	"name": "QueryForwardingNumber",
-	"type": "make-http-request",
-	"transitions": [
-	  {
-	    "next": "SayCurrentChief",
-	    "event": "success"
-	  },
-	  {
-	    "next": "SayFailed",
-	    "event": "failed"
-	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": 480,
-	    "y": 430
-	  },
-	  "method": "POST",
-	  "content_type": "application/x-www-form-urlencoded;charset=utf-8",
-	  "body": "{\n  \"to\": {{trigger.call.To}} ,\n  \"from\": {{trigger.call.From}} \n}",
-	  "parameters": [
+  definition = jsonencode(
+    {
+      "description": "Trebek",
+      "states": [
+	{
+	  "name": "Trigger",
+	  "type": "trigger",
+	  "transitions": [
 	    {
-	      "value": "{{trigger.call.From}}",
-	      "key": "callFrom"
+	      "next": "SendCallMessage",
+	      "event": "incomingMessage"
 	    },
 	    {
-	      "value": "{{trigger.call.To}}",
-	      "key": "callTo"
+	      "next": "QueryForwardingNumber",
+	      "event": "incomingCall"
+	    },
+	    {
+	      "event": "incomingRequest"
 	    }
 	  ],
-	  "url": google_cloudfunctions_function.trebek.https_trigger_url
-	}
-      },
-      {
-	"name": "SayCurrentChief",
-	"type": "say-play",
-	"transitions": [
-	  {
-	    "next": "SplitOnShift",
-	    "event": "audioComplete"
+	  "properties": {
+	    "offset": {
+	      "x": 340,
+	      "y": 100
+	    }
 	  }
-	],
-	"properties": {
-	  "voice": "default",
-	  "offset": {
-	    "x": 60,
-	    "y": 730
-	  },
-	  "loop": 1,
-	  "say": "The current Jeopardy Chief is {{widgets.QueryForwardingNumber.parsed.name}}.\n\nForwarding your call now.",
-	  "language": "en-US"
-	}
-      },
-      {
-	"name": "SayFailed",
-	"type": "say-play",
-	"transitions": [
-	  {
-	    "next": "ForwardCallBackup",
-	    "event": "audioComplete"
+	},
+	{
+	  "name": "ForwardCall",
+	  "type": "connect-call-to",
+	  "transitions": [
+	    {
+	      "event": "callCompleted"
+	    },
+	    {
+	      "event": "hangup"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": 170,
+	      "y": 1860
+	    },
+	    "caller_id": "{{contact.channel.address}}",
+	    "noun": "number",
+	    "to": "{{widgets.QueryForwardingNumber.parsed.forwardTo}}",
+	    "timeout": 30
 	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": 670,
-	    "y": 720
-	  },
-	  "loop": 1,
-	  "say": "I could not determine the current Jeopardy Chief. Forwarding your call to Mindy Duong."
-	}
-      },
-      {
-	"name": "ForwardCallBackup",
-	"type": "connect-call-to",
-	"transitions": [
-	  {
-	    "event": "callCompleted"
-	  },
-	  {
-	    "event": "hangup"
-	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": 670,
-	    "y": 1030
-	  },
-	  "caller_id": "{{contact.channel.address}}",
-	  "noun": "number",
-	  "to": "+18582055744",
-	  "timeout": 30
-	}
-      },
-      {
-	"name": "SendCallMessage",
-	"type": "send-message",
-	"transitions": [
-	  {
-	    "event": "sent"
-	  },
-	  {
-	    "event": "failed"
-	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": -150,
-	    "y": 410
-	  },
-	  "service": "{{trigger.message.InstanceSid}}",
-	  "channel": "{{trigger.message.ChannelSid}}",
-	  "from": "{{flow.channel.address}}",
-	  "to": "{{contact.channel.address}}",
-	  "body": "If you'd like to contact the current Jeopardy Chief, please call this number."
-	}
-      },
-      {
-	"name": "SayChiefShift",
-	"type": "say-play",
-	"transitions": [
-	  {
-	    "next": "ForwardCall",
-	    "event": "audioComplete"
-	  }
-	],
-	"properties": {
-	  "offset": {
-	    "x": 250,
-	    "y": 1270
-	  },
-	  "loop": 1,
-	  "say": "{{widgets.QueryForwardingNumber.parsed.name}} may be on shift, so you may need to call multiple times to reach them."
-	}
-      },
-      {
-	"name": "SplitOnShift",
-	"type": "split-based-on",
-	"transitions": [
-	  {
-	    "next": "ForwardCall",
-	    "event": "noMatch"
-	  },
-	  {
-	    "next": "SayChiefShift",
-	    "event": "match",
-	    "conditions": [
+	},
+	{
+	  "name": "QueryForwardingNumber",
+	  "type": "make-http-request",
+	  "transitions": [
+	    {
+	      "next": "SayCurrentChief",
+	      "event": "success"
+	    },
+	    {
+	      "next": "SayFailed",
+	      "event": "failed"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": 480,
+	      "y": 430
+	    },
+	    "method": "POST",
+	    "content_type": "application/x-www-form-urlencoded;charset=utf-8",
+	    "body": "{\n  \"to\": {{trigger.call.To}} ,\n  \"from\": {{trigger.call.From}} \n}",
+	    "parameters": [
 	      {
-		"friendly_name": "If value equal_to true",
-		"arguments": [
-		  "{{widgets.QueryForwardingNumber.parsed.onShift}}"
-		],
-		"type": "equal_to",
-		"value": "true"
+		"value": "{{trigger.call.From}}",
+		"key": "callFrom"
+	      },
+	      {
+		"value": "{{trigger.call.To}}",
+		"key": "callTo"
 	      }
-	    ]
+	    ],
+	    "url": "https://us-west2-trebek.cloudfunctions.net/trebek"
 	  }
-	],
-	"properties": {
-	  "input": "{{widgets.QueryForwardingNumber.parsed.onShift}}",
-	  "offset": {
-	    "x": 90,
-	    "y": 1020
+	},
+	{
+	  "name": "SayCurrentChief",
+	  "type": "say-play",
+	  "transitions": [
+	    {
+	      "next": "SplitOnShift",
+	      "event": "audioComplete"
+	    }
+	  ],
+	  "properties": {
+	    "voice": "default",
+	    "offset": {
+	      "x": 60,
+	      "y": 730
+	    },
+	    "loop": 1,
+	    "say": "The current Jeopardy Chief is {{widgets.QueryForwardingNumber.parsed.name}}.",
+	    "language": "en-US"
+	  }
+	},
+	{
+	  "name": "SayFailed",
+	  "type": "say-play",
+	  "transitions": [
+	    {
+	      "next": "ForwardCallBackup",
+	      "event": "audioComplete"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": 670,
+	      "y": 720
+	    },
+	    "loop": 1,
+	    "say": "I could not determine the current Jeopardy Chief. Forwarding your call to Mindy Duong."
+	  }
+	},
+	{
+	  "name": "ForwardCallBackup",
+	  "type": "connect-call-to",
+	  "transitions": [
+	    {
+	      "event": "callCompleted"
+	    },
+	    {
+	      "event": "hangup"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": 670,
+	      "y": 1030
+	    },
+	    "caller_id": "{{contact.channel.address}}",
+	    "noun": "number",
+	    "to": "+18582055744",
+	    "timeout": 30
+	  }
+	},
+	{
+	  "name": "SendCallMessage",
+	  "type": "send-message",
+	  "transitions": [
+	    {
+	      "event": "sent"
+	    },
+	    {
+	      "event": "failed"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": -150,
+	      "y": 410
+	    },
+	    "service": "{{trigger.message.InstanceSid}}",
+	    "channel": "{{trigger.message.ChannelSid}}",
+	    "from": "{{flow.channel.address}}",
+	    "to": "{{contact.channel.address}}",
+	    "body": "If you'd like to contact the current Jeopardy Chief, please call this number."
+	  }
+	},
+	{
+	  "name": "SayChiefShift",
+	  "type": "say-play",
+	  "transitions": [
+	    {
+	      "next": "SayForwardingCall",
+	      "event": "audioComplete"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": 250,
+	      "y": 1270
+	    },
+	    "loop": 1,
+	    "say": "{{widgets.QueryForwardingNumber.parsed.name}} may be on shift, so try again if you can't reach them."
+	  }
+	},
+	{
+	  "name": "SplitOnShift",
+	  "type": "split-based-on",
+	  "transitions": [
+	    {
+	      "next": "SayForwardingCall",
+	      "event": "noMatch"
+	    },
+	    {
+	      "next": "SayChiefShift",
+	      "event": "match",
+	      "conditions": [
+		{
+		  "friendly_name": "If value equal_to true",
+		  "arguments": [
+		    "{{widgets.QueryForwardingNumber.parsed.onShift}}"
+		  ],
+		  "type": "equal_to",
+		  "value": "true"
+		}
+	      ]
+	    }
+	  ],
+	  "properties": {
+	    "input": "{{widgets.QueryForwardingNumber.parsed.onShift}}",
+	    "offset": {
+	      "x": 90,
+	      "y": 1020
+	    }
+	  }
+	},
+	{
+	  "name": "SayForwardingCall",
+	  "type": "say-play",
+	  "transitions": [
+	    {
+	      "next": "ForwardCall",
+	      "event": "audioComplete"
+	    }
+	  ],
+	  "properties": {
+	    "offset": {
+	      "x": 140,
+	      "y": 1560
+	    },
+	    "loop": 1,
+	    "say": "Forwarding your call now."
 	  }
 	}
+      ],
+      "initial_state": "Trigger",
+      "flags": {
+	"allow_concurrent_calls": true
       }
-    ],
-    "initial_state": "Trigger",
-    "flags": {
-      "allow_concurrent_calls": true
     }
-  })
+  )
 }
