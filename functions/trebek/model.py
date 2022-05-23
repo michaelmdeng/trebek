@@ -31,7 +31,7 @@ class ScheduleConfig:
     name: str
     phoneNumber: str
     calendarId: str
-    enabled: str
+    enabled: bool = True
 
 
 @dataclass
