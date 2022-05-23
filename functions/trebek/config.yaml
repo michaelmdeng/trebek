@@ -2,11 +2,26 @@ scheduleConfig:
   - name: Mindy Duong
     calendarId: mn2esq1loakpq2844tp47mo2s98i4hrs@import.calendar.google.com
     phoneNumber: "+18582055744"
+    enabled: true
   - name: Manny Quaidoo
     calendarId: 44ehk3kvrvcmt9j6dtmth7vuek4tbh67@import.calendar.google.com
     phoneNumber: "+15852550897"
+    enabled: true
   - name: Nick Stark
     calendarId: vo51lggmrdhbejbnrf2a7cd3rhvu0bbj@import.calendar.google.com
     phoneNumber: "+16058309672"
-defaultPhoneNumber: "+18582055744"
-defaultName: Mindy Duong
+    enabled: true
+  - name: Kevin Rolnick
+    calendarId: 4k23ot05a059235lvkhoho6oa3ubntn5@import.calendar.google.com
+    phoneNumber: "+16082799483"
+    enabled: true
+  - name: KJ Stime
+    calendarId: 1ipbkchndhjf18s53sh7sieqdnjuvoud@import.calendar.google.com
+    phoneNumber: "+15099999138"
+    enabled: true
+  - name: John Quinn
+    calendarId: nfc0bot24ql6kaeues43dj32ajelajf8@import.calendar.google.com
+    phoneNumber: "+13605846962"
+    enabled: true
+defaultPhoneNumber: "+15099999138"
+defaultName: KJ Stime
