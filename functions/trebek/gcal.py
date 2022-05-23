@@ -10,7 +10,6 @@ from secret import SecretsClient
 
 class GCalClient:
     def __init__(self):
-        self._creds_file = None
         self._google = None
 
     async def __aenter__(self):
@@ -28,9 +27,7 @@ class GCalClient:
         return self
 
     async def __aexit__(self, exc_type, exc, backtrace):
-        if self._creds_file:
-            self._creds_file.close()
-        if self._google:
+        if self._google and self._google._get_session():
             return await self._google.__aexit__(exc_type, exc, backtrace)
 
     async def get_events_async(self, cal_id="primary", event_time=datetime.utcnow()):

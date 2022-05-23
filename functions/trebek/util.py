@@ -31,4 +31,4 @@ async def wait_until(aws, predicate, timeout=None):
                 pending.cancel()
             return done.result()
 
-    return await wait_until(pendings, predicate, timeout=None)
+    return await wait_until(pendings, predicate, timeout=timeout)

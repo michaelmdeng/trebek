@@ -18,9 +18,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 def trebek(request):
-    form_data = request.form
-    logging.info("Received request with data: %s", form_data)
-
     try:
         with model.ForwardingStatusContext(request):
             forward_request = parse_request(request)
@@ -37,6 +34,7 @@ def trebek(request):
 
 def parse_request(request):
     form_data = request.form
+    logging.info("Received request with data: %s", form_data)
 
     request = model.ForwardingRequest(
         numberFrom=form_data["callFrom"],
@@ -72,12 +70,18 @@ async def get_forward_response(forward_request):
             stack.enter_async_context(GCalClient()),
             stack.enter_async_context(ConfigClient()),
         )
+        schedule_configs = [
+            model.ScheduleConfig(**schedule_config)
+            for schedule_config in conf["scheduleConfig"]
+        ]
+
         tasks = get_jeopardy_info_tasks(
             client,
             forward_request,
             [
-                model.ScheduleConfig(**schedule_config)
-                for schedule_config in conf["scheduleConfig"]
+                schedule_config
+                for schedule_config in schedule_configs
+                if schedule_config.enabled
             ],
         )
         jeopardy_config = await util.wait_until(
